@@ -1,0 +1,1705 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Radio Station Picker</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #eee;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    select, input[type="text"], button {
+      margin: 10px 0;
+      padding: 10px;
+      font-size: 16px;
+      background: #222;
+      color: #eee;
+      border: 1px solid #444;
+      border-radius: 5px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      background: #222;
+      color: #f88;
+      border: 1px solid #555;
+      padding: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎧 Station Picker</h1>
+
+  <label>🔍 Search Artist:</label>
+  <input type="text" id="searchInput" placeholder="Type artist name..." oninput="searchArtists()" />
+
+  <label>🎵 Select Genre:</label>
+  <select id="genrePicker" onchange="updateArtistList()"></select>
+
+  <label>🎙️ Select Artist:</label>
+  <select id="artistPicker"></select>
+  <button onclick="playStation()">▶️ Play</button>
+  <button onclick="toggleFavourite()">⭐ Favourite</button>
+  <button onclick="pickRandom()">🎲 Random</button>
+
+  <h2>🔊 Now Playing</h2>
+  <audio id="audioPlayer" controls onerror="logBrokenLink()"></audio>
+
+  <h3>📋 Broken Link Log</h3>
+  <textarea id="brokenLog" readonly></textarea><br>
+  <button onclick="copyBrokenLog()">📋 Copy Log</button>
+
+  <script>
+    const genreData = {
+  "Rock": [
+    {
+      "name": "AC/DC",
+      "url": "http://streaming.exclusive.radio/er/acdc/icecast.audio"
+    },
+    {
+      "name": "Adam Lambert",
+      "url": "http://streaming.exclusive.radio/er/adamlambert/icecast.audio"
+    },
+    {
+      "name": "Aerosmith",
+      "url": "http://streaming.exclusive.radio/er/aerosmith/icecast.audio"
+    },
+    {
+      "name": "Alanis Morissette",
+      "url": "http://streaming.exclusive.radio/er/alanismorissette/icecast.audio"
+    },
+    {
+      "name": "Alice Cooper",
+      "url": "http://streaming.exclusive.radio/er/alicecooper/icecast.audio"
+    },
+    {
+      "name": "Billy Idol",
+      "url": "http://streaming.exclusive.radio/er/billyidol/icecast.audio"
+    },
+    {
+      "name": "Billy Joel",
+      "url": "http://streaming.exclusive.radio/er/billyjoel/icecast.audio"
+    },
+    {
+      "name": "Blur",
+      "url": "http://streaming.exclusive.radio/er/blur/icecast.audio"
+    },
+    {
+      "name": "Bob Seger",
+      "url": "http://streaming.exclusive.radio/er/bobseger/icecast.audio"
+    },
+    {
+      "name": "Bon Jovi",
+      "url": "http://streaming.exclusive.radio/er/bonjovi/icecast.audio"
+    },
+    {
+      "name": "Boston",
+      "url": "http://streaming.exclusive.radio/er/boston/icecast.audio"
+    },
+    {
+      "name": "Bruce Springsteen",
+      "url": "http://streaming.exclusive.radio/er/springsteen/icecast.audio"
+    },
+    {
+      "name": "Bryan Ferry",
+      "url": "http://streaming.exclusive.radio/er/bryanferry/icecast.audio"
+    },
+    {
+      "name": "Buddy Holly",
+      "url": "http://streaming.exclusive.radio/er/buddyholly/icecast.audio"
+    },
+    {
+      "name": "Carly Simon",
+      "url": "http://streaming.exclusive.radio/er/carlysimon/icecast.audio"
+    },
+    {
+      "name": "Carole King",
+      "url": "http://streaming.exclusive.radio/er/caroleking/icecast.audio"
+    },
+    {
+      "name": "Chicago",
+      "url": "http://streaming.exclusive.radio/er/chicago/icecast.audio"
+    },
+    {
+      "name": "Chris Rea",
+      "url": "http://streaming.exclusive.radio/er/chrisrea/icecast.audio"
+    },
+    {
+      "name": "Chuck Berry",
+      "url": "http://streaming.exclusive.radio/er/chuckberry/icecast.audio"
+    },
+    {
+      "name": "Coldplay",
+      "url": "http://streaming.exclusive.radio/er/coldplay/icecast.audio"
+    },
+    {
+      "name": "Creedence Clearwater Revival",
+      "url": "http://streaming.exclusive.radio/er/creedence/icecast.audio"
+    },
+    {
+      "name": "Crowded House",
+      "url": "http://streaming.exclusive.radio/er/crowdedhouse/icecast.audio"
+    },
+    {
+      "name": "Daft Punk",
+      "url": "http://streaming.exclusive.radio/er/daftpunk/icecast.audio"
+    },
+    {
+      "name": "David Bowie",
+      "url": "http://streaming.exclusive.radio/er/davidbowie/icecast.audio"
+    },
+    {
+      "name": "Deep Purple",
+      "url": "http://streaming.exclusive.radio/er/deeppurple/icecast.audio"
+    },
+    {
+      "name": "Def Leppard",
+      "url": "http://streaming.exclusive.radio/er/defleppard/icecast.audio"
+    },
+    {
+      "name": "Depeche Mode",
+      "url": "http://streaming.exclusive.radio/er/depechemode/icecast.audio"
+    },
+    {
+      "name": "Dire Straits",
+      "url": "http://streaming.exclusive.radio/er/direstraits/icecast.audio"
+    },
+    {
+      "name": "Eagles",
+      "url": "http://streaming.exclusive.radio/er/eagles/icecast.audio"
+    },
+    {
+      "name": "Elton John",
+      "url": "http://streaming.exclusive.radio/er/eltonjohn/icecast.audio"
+    },
+    {
+      "name": "Elvis Costello",
+      "url": "http://streaming.exclusive.radio/er/elviscostello/icecast.audio"
+    },
+    {
+      "name": "Elvis Presley",
+      "url": "http://streaming.exclusive.radio/er/elvispresley/icecast.audio"
+    },
+    {
+      "name": "Eric Clapton",
+      "url": "http://streaming.exclusive.radio/er/ericclapton/icecast.audio"
+    },
+    {
+      "name": "Fleetwood Mac",
+      "url": "http://streaming.exclusive.radio/er/fleetwoodmac/icecast.audio"
+    },
+    {
+      "name": "Foo Fighters",
+      "url": "http://streaming.exclusive.radio/er/foofighters/icecast.audio"
+    },
+    {
+      "name": "Foreigner",
+      "url": "http://streaming.exclusive.radio/er/foreigner/icecast.audio"
+    },
+    {
+      "name": "Genesis",
+      "url": "http://streaming.exclusive.radio/er/genesis/icecast.audio"
+    },
+    {
+      "name": "George Harrison",
+      "url": "http://streaming.exclusive.radio/er/georgeharrison/icecast.audio"
+    },
+    {
+      "name": "Grateful Dead",
+      "url": "http://streaming.exclusive.radio/er/gratefuldead/icecast.audio"
+    },
+    {
+      "name": "Green Day",
+      "url": "http://streaming.exclusive.radio/er/greenday/icecast.audio"
+    },
+    {
+      "name": "Guns N' Roses",
+      "url": "http://streaming.exclusive.radio/er/gunsnroses/icecast.audio"
+    },
+    {
+      "name": "INXS",
+      "url": "http://streaming.exclusive.radio/er/INXS/icecast.audio"
+    },
+    {
+      "name": "Jefferson Airplane",
+      "url": "http://streaming.exclusive.radio/er/jeffersonairplane/icecast.audio"
+    },
+    {
+      "name": "Jethro Tull",
+      "url": "http://streaming.exclusive.radio/er/jethrotull/icecast.audio"
+    },
+    {
+      "name": "Jimi Hendrix",
+      "url": "http://streaming.exclusive.radio/er/hendrix/icecast.audio"
+    },
+    {
+      "name": "Joan Jett",
+      "url": "http://streaming.exclusive.radio/er/joanjett/icecast.audio"
+    },
+    {
+      "name": "Joe Satriani",
+      "url": "http://streaming.exclusive.radio/er/joesatriani/icecast.audio"
+    },
+    {
+      "name": "John Lennon",
+      "url": "http://streaming.exclusive.radio/er/lennon/icecast.audio"
+    },
+    {
+      "name": "Johnny Winter",
+      "url": "http://streaming.exclusive.radio/er/johnnywinter/icecast.audio"
+    },
+    {
+      "name": "Journey",
+      "url": "http://streaming.exclusive.radio/er/journey/icecast.audio"
+    },
+    {
+      "name": "Kate Bush",
+      "url": "http://streaming.exclusive.radio/er/katebush/icecast.audio"
+    },
+    {
+      "name": "Keane",
+      "url": "http://streaming.exclusive.radio/er/keane/icecast.audio"
+    },
+    {
+      "name": "KISS",
+      "url": "http://streaming.exclusive.radio/er/kiss/icecast.audio"
+    },
+    {
+      "name": "Led Zeppelin",
+      "url": "http://streaming.exclusive.radio/er/ledzeppelin/icecast.audio"
+    },
+    {
+      "name": "Little Feat",
+      "url": "http://streaming.exclusive.radio/er/littlefeat/icecast.audio"
+    },
+    {
+      "name": "Little Richard",
+      "url": "http://streaming.exclusive.radio/er/littlerichard/icecast.audio"
+    },
+    {
+      "name": "Meat Loaf",
+      "url": "http://streaming.exclusive.radio/er/meatloaf/icecast.audio"
+    },
+    {
+      "name": "Metallica",
+      "url": "http://streaming.exclusive.radio/er/metallica/icecast.audio"
+    },
+    {
+      "name": "Neil Diamond",
+      "url": "http://streaming.exclusive.radio/er/neildiamond/icecast.audio"
+    },
+    {
+      "name": "New Order",
+      "url": "http://streaming.exclusive.radio/er/neworder/icecast.audio"
+    },
+    {
+      "name": "Nickelback",
+      "url": "http://streaming.exclusive.radio/er/nickelback/icecast.audio"
+    },
+    {
+      "name": "Nirvana",
+      "url": "http://streaming.exclusive.radio/er/nirvana/icecast.audio"
+    },
+    {
+      "name": "Oasis",
+      "url": "http://streaming.exclusive.radio/er/oasis/icecast.audio"
+    },
+    {
+      "name": "Patti Smith",
+      "url": "http://streaming.exclusive.radio/er/pattismith/icecast.audio"
+    },
+    {
+      "name": "Paul McCartney",
+      "url": "http://streaming.exclusive.radio/er/paulmccartney/icecast.audio"
+    },
+    {
+      "name": "Paul Weller",
+      "url": "http://streaming.exclusive.radio/er/paulweller/icecast.audio"
+    },
+    {
+      "name": "Peter Frampton",
+      "url": "http://streaming.exclusive.radio/er/peterframpton/icecast.audio"
+    },
+    {
+      "name": "Peter Green's Fleetwood Mac",
+      "url": "http://streaming.exclusive.radio/er/pgfleetwood/icecast.audio"
+    },
+    {
+      "name": "Phil Collins",
+      "url": "http://streaming.exclusive.radio/er/philcollins/icecast.audio"
+    },
+    {
+      "name": "Pink Floyd",
+      "url": "http://streaming.exclusive.radio/er/pinkfloyd/icecast.audio"
+    },
+    {
+      "name": "Queen",
+      "url": "http://streaming.exclusive.radio/er/queen/icecast.audio"
+    },
+    {
+      "name": "R.E.M.",
+      "url": "http://streaming.exclusive.radio/er/rem/icecast.audio"
+    },
+    {
+      "name": "Ramones",
+      "url": "http://streaming.exclusive.radio/er/ramones/icecast.audio"
+    },
+    {
+      "name": "Red Hot Chili Peppers",
+      "url": "http://streaming.exclusive.radio/er/chilipeppers/icecast.audio"
+    },
+    {
+      "name": "Robert Palmer",
+      "url": "http://streaming.exclusive.radio/er/robertpalmer/icecast.audio"
+    },
+    {
+      "name": "Rock N' Roll Party",
+      "url": "http://streaming.exclusive.radio/er/rocknrollparty/icecast.audio"
+    },
+    {
+      "name": "Rod Stewart",
+      "url": "http://streaming.exclusive.radio/er/rodstewart/icecast.audio"
+    },
+    {
+      "name": "Rory Gallagher",
+      "url": "http://streaming.exclusive.radio/er/rorygallagher/icecast.audio"
+    },
+    {
+      "name": "Rush",
+      "url": "http://streaming.exclusive.radio/er/rush/icecast.audio"
+    },
+    {
+      "name": "Santana",
+      "url": "http://streaming.exclusive.radio/er/santana/icecast.audio"
+    },
+    {
+      "name": "Scorpions",
+      "url": "http://streaming.exclusive.radio/er/scorpions/icecast.audio"
+    },
+    {
+      "name": "Sheryl Crow",
+      "url": "http://streaming.exclusive.radio/er/sherylcrow/icecast.audio"
+    },
+    {
+      "name": "Small Faces",
+      "url": "http://streaming.exclusive.radio/er/smallfaces/icecast.audio"
+    },
+    {
+      "name": "Snow Patrol",
+      "url": "http://streaming.exclusive.radio/er/snowpatrol/icecast.audio"
+    },
+    {
+      "name": "Steely Dan",
+      "url": "http://streaming.exclusive.radio/er/steelydan/icecast.audio"
+    },
+    {
+      "name": "Steve Winwood",
+      "url": "http://streaming.exclusive.radio/er/stevewinwood/icecast.audio"
+    },
+    {
+      "name": "Sting",
+      "url": "http://streaming.exclusive.radio/er/sting/icecast.audio"
+    },
+    {
+      "name": "Stone Temple Pilots",
+      "url": "http://streaming.exclusive.radio/er/stonetemplepilots/icecast.audio"
+    },
+    {
+      "name": "Supertramp",
+      "url": "http://streaming.exclusive.radio/er/supertramp/icecast.audio"
+    },
+    {
+      "name": "T-Rex",
+      "url": "http://streaming.exclusive.radio/er/trex/icecast.audio"
+    },
+    {
+      "name": "Talking Heads",
+      "url": "http://streaming.exclusive.radio/er/talkingheads/icecast.audio"
+    },
+    {
+      "name": "The Allman Brothers Band",
+      "url": "http://streaming.exclusive.radio/er/allmanbrothers/icecast.audio"
+    },
+    {
+      "name": "The B-52's",
+      "url": "http://streaming.exclusive.radio/er/theb52s/icecast.audio"
+    },
+    {
+      "name": "The Band",
+      "url": "http://streaming.exclusive.radio/er/theband/icecast.audio"
+    },
+    {
+      "name": "The Beach Boys",
+      "url": "http://streaming.exclusive.radio/er/beachboys/icecast.audio"
+    },
+    {
+      "name": "The Beatles",
+      "url": "http://streaming.exclusive.radio/er/beatles/icecast.audio"
+    },
+    {
+      "name": "The Black Crowes",
+      "url": "http://streaming.exclusive.radio/er/theblackcrowes/icecast.audio"
+    },
+    {
+      "name": "The Byrds",
+      "url": "http://streaming.exclusive.radio/er/thebyrds/icecast.audio"
+    },
+    {
+      "name": "The Cars",
+      "url": "http://streaming.exclusive.radio/er/thecars/icecast.audio"
+    },
+    {
+      "name": "The Clash",
+      "url": "http://streaming.exclusive.radio/er/theclash/icecast.audio"
+    },
+    {
+      "name": "The Cure",
+      "url": "http://streaming.exclusive.radio/er/thecure/icecast.audio"
+    },
+    {
+      "name": "The Doobie Brothers",
+      "url": "http://streaming.exclusive.radio/er/doobiebrothers/icecast.audio"
+    },
+    {
+      "name": "The Doors",
+      "url": "http://streaming.exclusive.radio/er/doors/icecast.audio"
+    },
+    {
+      "name": "The Killers",
+      "url": "http://streaming.exclusive.radio/er/thekillers/icecast.audio"
+    },
+    {
+      "name": "The Kinks",
+      "url": "http://streaming.exclusive.radio/er/thekinks/icecast.audio"
+    },
+    {
+      "name": "The Police",
+      "url": "http://streaming.exclusive.radio/er/police/icecast.audio"
+    },
+    {
+      "name": "The Pretenders",
+      "url": "http://streaming.exclusive.radio/er/pretenders/icecast.audio"
+    },
+    {
+      "name": "The Rolling Stones",
+      "url": "http://streaming.exclusive.radio/er/rollingstones/icecast.audio"
+    },
+    {
+      "name": "The Steve Miller Band",
+      "url": "http://streaming.exclusive.radio/er/stevemillerband/icecast.audio"
+    },
+    {
+      "name": "The Velvet Underground",
+      "url": "http://streaming.exclusive.radio/er/velvetunderground/icecast.audio"
+    },
+    {
+      "name": "The Who",
+      "url": "http://streaming.exclusive.radio/er/thewho/icecast.audio"
+    },
+    {
+      "name": "The Yardbirds",
+      "url": "http://streaming.exclusive.radio/er/theyardbirds/icecast.audio"
+    },
+    {
+      "name": "Thin Lizzy",
+      "url": "http://streaming.exclusive.radio/er/thinlizzy/icecast.audio"
+    },
+    {
+      "name": "Tina Turner",
+      "url": "http://streaming.exclusive.radio/er/tinaturner/icecast.audio"
+    },
+    {
+      "name": "Tom Petty",
+      "url": "http://streaming.exclusive.radio/er/tompetty/icecast.audio"
+    },
+    {
+      "name": "Toto",
+      "url": "http://streaming.exclusive.radio/er/toto/icecast.audio"
+    },
+    {
+      "name": "U2",
+      "url": "http://streaming.exclusive.radio/er/u2/icecast.audio"
+    },
+    {
+      "name": "UB40",
+      "url": "http://streaming.exclusive.radio/er/ub40/icecast.audio"
+    },
+    {
+      "name": "Van Halen",
+      "url": "http://streaming.exclusive.radio/er/vanhalen/icecast.audio"
+    },
+    {
+      "name": "Whitesnake",
+      "url": "http://streaming.exclusive.radio/er/whitesnake/icecast.audio"
+    },
+    {
+      "name": "Yes",
+      "url": "http://streaming.exclusive.radio/er/yes/icecast.audio"
+    },
+    {
+      "name": "ZZ Top",
+      "url": "http://streaming.exclusive.radio/er/zztop/icecast.audio"
+    }
+  ],
+  "Soul": [
+    {
+      "name": "Al Green",
+      "url": "http://streaming.exclusive.radio/er/algreen/icecast.audio"
+    },
+    {
+      "name": "Amy Winehouse",
+      "url": "http://streaming.exclusive.radio/er/amywinehouse/icecast.audio"
+    },
+    {
+      "name": "Aretha Franklin",
+      "url": "http://streaming.exclusive.radio/er/arethafranklin/icecast.audio"
+    },
+    {
+      "name": "Barry White",
+      "url": "http://streaming.exclusive.radio/er/barrywhite/icecast.audio"
+    },
+    {
+      "name": "Bill Withers",
+      "url": "http://streaming.exclusive.radio/er/billwithers/icecast.audio"
+    },
+    {
+      "name": "Booker T &  The MG's",
+      "url": "http://streaming.exclusive.radio/er/bookert/icecast.audio"
+    },
+    {
+      "name": "Chic",
+      "url": "http://streaming.exclusive.radio/er/chic/icecast.audio"
+    },
+    {
+      "name": "Curtis Mayfield",
+      "url": "http://streaming.exclusive.radio/er/curtismayfield/icecast.audio"
+    },
+    {
+      "name": "David Soul",
+      "url": "http://streaming.exclusive.radio/er/davidsoul/icecast.audio"
+    },
+    {
+      "name": "Diana Ross",
+      "url": "http://streaming.exclusive.radio/er/dianaross/icecast.audio"
+    },
+    {
+      "name": "Etta James",
+      "url": "http://streaming.exclusive.radio/er/ettajames/icecast.audio"
+    },
+    {
+      "name": "Jackie Wilson",
+      "url": "http://streaming.exclusive.radio/er/jackiewilson/icecast.audio"
+    },
+    {
+      "name": "James Brown",
+      "url": "http://streaming.exclusive.radio/er/jamesbrown/icecast.audio"
+    },
+    {
+      "name": "Marvin Gaye",
+      "url": "http://streaming.exclusive.radio/er/marvingaye/icecast.audio"
+    },
+    {
+      "name": "Mary J. Blige",
+      "url": "http://streaming.exclusive.radio/er/maryjblige/icecast.audio"
+    },
+    {
+      "name": "Michael Kiwanuka",
+      "url": "http://streaming.exclusive.radio/er/michaelkiwanuka/icecast.audio"
+    },
+    {
+      "name": "Nina Simone",
+      "url": "http://streaming.exclusive.radio/er/ninasimone/icecast.audio"
+    },
+    {
+      "name": "Northern Soul",
+      "url": "http://streaming.exclusive.radio/er/northernsoul/icecast.audio"
+    },
+    {
+      "name": "Otis Redding",
+      "url": "http://streaming.exclusive.radio/er/otisredding/icecast.audio"
+    },
+    {
+      "name": "Prince",
+      "url": "http://streaming.exclusive.radio/er/prince/icecast.audio"
+    },
+    {
+      "name": "Simon &  Garfunkel",
+      "url": "http://streaming.exclusive.radio/er/simongarfunkle/icecast.audio"
+    },
+    {
+      "name": "Sly and The Family Stone",
+      "url": "http://streaming.exclusive.radio/er/slyandthefamilystone/icecast.audio"
+    },
+    {
+      "name": "Smokey Robinson",
+      "url": "http://streaming.exclusive.radio/er/smokeyrobinson/icecast.audio"
+    },
+    {
+      "name": "Soul Royalty",
+      "url": "http://streaming.exclusive.radio/er/soulroyalty/icecast.audio"
+    },
+    {
+      "name": "Stevie Wonder",
+      "url": "http://streaming.exclusive.radio/er/steviewonder/icecast.audio"
+    },
+    {
+      "name": "The Drifters",
+      "url": "http://streaming.exclusive.radio/er/drifters/icecast.audio"
+    },
+    {
+      "name": "The Four Tops",
+      "url": "http://streaming.exclusive.radio/er/fourtops/icecast.audio"
+    },
+    {
+      "name": "The Shirelles",
+      "url": "http://streaming.exclusive.radio/er/theshirelles/icecast.audio"
+    },
+    {
+      "name": "The Temptations",
+      "url": "http://streaming.exclusive.radio/er/thetemptations/icecast.audio"
+    }
+  ],
+  "Country": [
+    {
+      "name": "Alabama",
+      "url": "http://streaming.exclusive.radio/er/alabama/icecast.audio"
+    },
+    {
+      "name": "Brantley Gilbert",
+      "url": "http://streaming.exclusive.radio/er/brantleygilbert/icecast.audio"
+    },
+    {
+      "name": "Carrie Underwood",
+      "url": "http://streaming.exclusive.radio/er/carrieunderwood/icecast.audio"
+    },
+    {
+      "name": "Dallas Smith",
+      "url": "http://streaming.exclusive.radio/er/dallassmith/icecast.audio"
+    },
+    {
+      "name": "Dolly Parton",
+      "url": "http://streaming.exclusive.radio/er/dollyparton/icecast.audio"
+    },
+    {
+      "name": "Florida Georgia Line",
+      "url": "http://streaming.exclusive.radio/er/floridageorgialine/icecast.audio"
+    },
+    {
+      "name": "Garth Brooks",
+      "url": "http://streaming.exclusive.radio/er/garthbrooks/icecast.audio"
+    },
+    {
+      "name": "George Jones",
+      "url": "http://streaming.exclusive.radio/er/georgejones/icecast.audio"
+    },
+    {
+      "name": "George Strait",
+      "url": "http://streaming.exclusive.radio/er/georgestrait/icecast.audio"
+    },
+    {
+      "name": "Glen Campbell",
+      "url": "http://streaming.exclusive.radio/er/glencampbell/icecast.audio"
+    },
+    {
+      "name": "Gram Parsons",
+      "url": "http://streaming.exclusive.radio/er/gramparsons/icecast.audio"
+    },
+    {
+      "name": "Gretchen Peters",
+      "url": "http://streaming.exclusive.radio/er/gretchenpeters/icecast.audio"
+    },
+    {
+      "name": "Hank Williams",
+      "url": "http://streaming.exclusive.radio/er/hankwilliams/icecast.audio"
+    },
+    {
+      "name": "Jim Reeves",
+      "url": "http://streaming.exclusive.radio/er/jimreeves/icecast.audio"
+    },
+    {
+      "name": "Johnny Cash",
+      "url": "http://streaming.exclusive.radio/er/johnnycash/icecast.audio"
+    },
+    {
+      "name": "Keith Urban",
+      "url": "http://streaming.exclusive.radio/er/keithurban/icecast.audio"
+    },
+    {
+      "name": "Kenny Chesney",
+      "url": "http://streaming.exclusive.radio/er/kennychesney/icecast.audio"
+    },
+    {
+      "name": "Kenny Rogers",
+      "url": "http://streaming.exclusive.radio/er/kennyrogers/icecast.audio"
+    },
+    {
+      "name": "Kip Moore",
+      "url": "http://streaming.exclusive.radio/er/kipmoore/icecast.audio"
+    },
+    {
+      "name": "Lady A",
+      "url": "http://streaming.exclusive.radio/er/ladyantebellum/icecast.audio"
+    },
+    {
+      "name": "Loretta Lynn",
+      "url": "http://streaming.exclusive.radio/er/lorettalynn/icecast.audio"
+    },
+    {
+      "name": "Luke Bryan",
+      "url": "http://streaming.exclusive.radio/er/lukebryan/icecast.audio"
+    },
+    {
+      "name": "Merle Haggard",
+      "url": "http://streaming.exclusive.radio/er/merlehaggard/icecast.audio"
+    },
+    {
+      "name": "Patsy Cline",
+      "url": "http://streaming.exclusive.radio/er/patsycline/icecast.audio"
+    },
+    {
+      "name": "Randy Travis",
+      "url": "http://streaming.exclusive.radio/er/randytravis/icecast.audio"
+    },
+    {
+      "name": "Reba McEntire",
+      "url": "http://streaming.exclusive.radio/er/rebamcentire/icecast.audio"
+    },
+    {
+      "name": "Shania Twain",
+      "url": "http://streaming.exclusive.radio/er/shaniatwain/icecast.audio"
+    },
+    {
+      "name": "Tammy Wynette",
+      "url": "http://streaming.exclusive.radio/er/tammywynette/icecast.audio"
+    },
+    {
+      "name": "Tim McGraw",
+      "url": "http://streaming.exclusive.radio/er/timmcgraw/icecast.audio"
+    },
+    {
+      "name": "Toby Keith",
+      "url": "http://streaming.exclusive.radio/er/tobykeith/icecast.audio"
+    },
+    {
+      "name": "Waylon Jennings",
+      "url": "http://streaming.exclusive.radio/er/waylonjennings/icecast.audio"
+    },
+    {
+      "name": "Willie Nelson",
+      "url": "http://streaming.exclusive.radio/er/willienelson/icecast.audio"
+    }
+  ],
+  "Blues": [
+    {
+      "name": "Albert Collins",
+      "url": "http://streaming.exclusive.radio/er/albertcollins/icecast.audio"
+    },
+    {
+      "name": "B.B. King",
+      "url": "http://streaming.exclusive.radio/er/bbking/icecast.audio"
+    },
+    {
+      "name": "Bo Diddley",
+      "url": "http://streaming.exclusive.radio/er/bodiddley/icecast.audio"
+    },
+    {
+      "name": "Buddy Guy",
+      "url": "http://streaming.exclusive.radio/er/buddyguy/icecast.audio"
+    },
+    {
+      "name": "Howlin Wolf",
+      "url": "http://streaming.exclusive.radio/er/howlinwolf/icecast.audio"
+    },
+    {
+      "name": "J J Cale",
+      "url": "http://streaming.exclusive.radio/er/jjcale/icecast.audio"
+    },
+    {
+      "name": "Jimmy Rogers",
+      "url": "http://streaming.exclusive.radio/er/jimmyrogers/icecast.audio"
+    },
+    {
+      "name": "Joe Bonamassa",
+      "url": "http://streaming.exclusive.radio/er/joebonamassa/icecast.audio"
+    },
+    {
+      "name": "John Lee Hooker",
+      "url": "http://streaming.exclusive.radio/er/johnleehooker/icecast.audio"
+    },
+    {
+      "name": "John Mayall",
+      "url": "http://streaming.exclusive.radio/er/johnmayall/icecast.audio"
+    },
+    {
+      "name": "Muddy Waters",
+      "url": "http://streaming.exclusive.radio/er/muddywaters/icecast.audio"
+    },
+    {
+      "name": "Robert Cray",
+      "url": "http://streaming.exclusive.radio/er/robertcray/icecast.audio"
+    },
+    {
+      "name": "Stevie Ray Vaughan",
+      "url": "http://streaming.exclusive.radio/er/stevierayvaughan/icecast.audio"
+    },
+    {
+      "name": "The Moody Blues",
+      "url": "http://streaming.exclusive.radio/er/moodyblues/icecast.audio"
+    }
+  ],
+  "Electronic": [
+    {
+      "name": "Alison Moyet",
+      "url": "http://streaming.exclusive.radio/er/alisonmoyet/icecast.audio"
+    },
+    {
+      "name": "Avicii",
+      "url": "http://streaming.exclusive.radio/er/avicii/icecast.audio"
+    },
+    {
+      "name": "Calvin Harris",
+      "url": "http://streaming.exclusive.radio/er/calvinharris/icecast.audio"
+    },
+    {
+      "name": "Dance Chill",
+      "url": "http://streaming.exclusive.radio/er/chilldance/icecast.audio"
+    },
+    {
+      "name": "Pet Shop Boys",
+      "url": "http://streaming.exclusive.radio/er/petshopboys/icecast.audio"
+    },
+    {
+      "name": "Sleep-Kids",
+      "url": "http://streaming.exclusive.radio/er/sleep-kids/icecast.audio"
+    }
+  ],
+  "Folk": [
+    {
+      "name": "America",
+      "url": "http://streaming.exclusive.radio/er/america/icecast.audio"
+    },
+    {
+      "name": "Bob Dylan",
+      "url": "http://streaming.exclusive.radio/er/bobdylan/icecast.audio"
+    },
+    {
+      "name": "Cat Stevens",
+      "url": "http://streaming.exclusive.radio/er/catstevens/icecast.audio"
+    },
+    {
+      "name": "George Ezra",
+      "url": "http://streaming.exclusive.radio/er/georgeezra/icecast.audio"
+    },
+    {
+      "name": "Jack Johnson",
+      "url": "http://streaming.exclusive.radio/er/jackjohnson/icecast.audio"
+    },
+    {
+      "name": "Jackson Browne",
+      "url": "http://streaming.exclusive.radio/er/jacksonbrowne/icecast.audio"
+    },
+    {
+      "name": "James Taylor",
+      "url": "http://streaming.exclusive.radio/er/jamestaylor/icecast.audio"
+    },
+    {
+      "name": "Joan Baez",
+      "url": "http://streaming.exclusive.radio/er/joanbaez/icecast.audio"
+    },
+    {
+      "name": "John Denver",
+      "url": "http://streaming.exclusive.radio/er/johndenver/icecast.audio"
+    },
+    {
+      "name": "Joni Mitchell",
+      "url": "http://streaming.exclusive.radio/er/jonimitchell/icecast.audio"
+    },
+    {
+      "name": "Leonard Cohen",
+      "url": "http://streaming.exclusive.radio/er/leonardcohen/icecast.audio"
+    },
+    {
+      "name": "Loudon Wainwright III",
+      "url": "http://streaming.exclusive.radio/er/loudonwainwrightiii/icecast.audio"
+    },
+    {
+      "name": "Neil Young",
+      "url": "http://streaming.exclusive.radio/er/neilyoung/icecast.audio"
+    },
+    {
+      "name": "Pete Seeger",
+      "url": "http://streaming.exclusive.radio/er/peteseeger/icecast.audio"
+    },
+    {
+      "name": "Tom Paxton",
+      "url": "http://streaming.exclusive.radio/er/tompaxton/icecast.audio"
+    },
+    {
+      "name": "Van Morrison",
+      "url": "http://streaming.exclusive.radio/er/vanmorrison/icecast.audio"
+    }
+  ],
+  "Classical": [
+    {
+      "name": "Andrea Bocelli",
+      "url": "http://streaming.exclusive.radio/er/andreabocelli/icecast.audio"
+    },
+    {
+      "name": "Chopin",
+      "url": "http://streaming.exclusive.radio/er/chopin/icecast.audio"
+    },
+    {
+      "name": "Liszt",
+      "url": "http://streaming.exclusive.radio/er/liszt/icecast.audio"
+    },
+    {
+      "name": "Mozart",
+      "url": "http://streaming.exclusive.radio/er/mozart/icecast.audio"
+    },
+    {
+      "name": "Ravel",
+      "url": "http://streaming.exclusive.radio/er/ravel/icecast.audio"
+    },
+    {
+      "name": "Shostakovich",
+      "url": "http://streaming.exclusive.radio/er/shostakovich/icecast.audio"
+    },
+    {
+      "name": "Sibelius",
+      "url": "http://streaming.exclusive.radio/er/sibelius/icecast.audio"
+    },
+    {
+      "name": "Strauss",
+      "url": "http://streaming.exclusive.radio/er/strauss/icecast.audio"
+    },
+    {
+      "name": "Vivaldi",
+      "url": "http://streaming.exclusive.radio/er/vivaldi/icecast.audio"
+    }
+  ],
+  "Pop": [
+    {
+      "name": "Andy Williams",
+      "url": "http://streaming.exclusive.radio/er/andywilliams/icecast.audio"
+    },
+    {
+      "name": "Annie Lennox",
+      "url": "http://streaming.exclusive.radio/er/annielennox/icecast.audio"
+    },
+    {
+      "name": "Ariana Grande",
+      "url": "http://streaming.exclusive.radio/er/arianagrande/icecast.audio"
+    },
+    {
+      "name": "Backstreet Boys",
+      "url": "http://streaming.exclusive.radio/er/backstreetboys/icecast.audio"
+    },
+    {
+      "name": "Barbra Streisand",
+      "url": "http://streaming.exclusive.radio/er/streisand/icecast.audio"
+    },
+    {
+      "name": "Barry Manilow",
+      "url": "http://streaming.exclusive.radio/er/barrymanilow/icecast.audio"
+    },
+    {
+      "name": "Beach Party",
+      "url": "http://streaming.exclusive.radio/er/beachparty/icecast.audio"
+    },
+    {
+      "name": "Belinda Carlisle",
+      "url": "http://streaming.exclusive.radio/er/belindacarlisle/icecast.audio"
+    },
+    {
+      "name": "Beyonce",
+      "url": "http://streaming.exclusive.radio/er/beyonce/icecast.audio"
+    },
+    {
+      "name": "Billie Eilish",
+      "url": "http://streaming.exclusive.radio/er/billyeilish/icecast.audio"
+    },
+    {
+      "name": "Britney Spears",
+      "url": "http://streaming.exclusive.radio/er/britney/icecast.audio"
+    },
+    {
+      "name": "Bruno Mars",
+      "url": "http://streaming.exclusive.radio/er/brunomars/icecast.audio"
+    },
+    {
+      "name": "Bryan Adams",
+      "url": "http://streaming.exclusive.radio/er/bryanadams/icecast.audio"
+    },
+    {
+      "name": "Celine Dion",
+      "url": "http://streaming.exclusive.radio/er/celinedion/icecast.audio"
+    },
+    {
+      "name": "Charley Pride",
+      "url": "http://streaming.exclusive.radio/er/charleypride/icecast.audio"
+    },
+    {
+      "name": "Cher",
+      "url": "http://streaming.exclusive.radio/er/cher/icecast.audio"
+    },
+    {
+      "name": "Christmas Pop",
+      "url": "http://streaming.exclusive.radio/er/christmaspop/icecast.audio"
+    },
+    {
+      "name": "Cliff Richard",
+      "url": "http://streaming.exclusive.radio/er/cliffrichard/icecast.audio"
+    },
+    {
+      "name": "Club",
+      "url": "http://streaming.exclusive.radio/er/club/icecast.audio"
+    },
+    {
+      "name": "Dean Martin",
+      "url": "http://streaming.exclusive.radio/er/deanmartin/icecast.audio"
+    },
+    {
+      "name": "Dionne Warwick",
+      "url": "http://streaming.exclusive.radio/er/dionnewarwick/icecast.audio"
+    },
+    {
+      "name": "Disco",
+      "url": "http://streaming.exclusive.radio/er/disco/icecast.audio"
+    },
+    {
+      "name": "Donna Summer",
+      "url": "http://streaming.exclusive.radio/er/donnasummer/icecast.audio"
+    },
+    {
+      "name": "Dr Hook",
+      "url": "http://streaming.exclusive.radio/er/drhook/icecast.audio"
+    },
+    {
+      "name": "Drake",
+      "url": "http://streaming.exclusive.radio/er/drake/icecast.audio"
+    },
+    {
+      "name": "Dua Lipa",
+      "url": "http://streaming.exclusive.radio/er/dualipa/icecast.audio"
+    },
+    {
+      "name": "Duran Duran",
+      "url": "http://streaming.exclusive.radio/er/duranduran/icecast.audio"
+    },
+    {
+      "name": "Ed Sheeran",
+      "url": "http://streaming.exclusive.radio/er/edsheeran/icecast.audio"
+    },
+    {
+      "name": "Electric Light Orchestra",
+      "url": "http://streaming.exclusive.radio/er/elo/icecast.audio"
+    },
+    {
+      "name": "Engelbert Humperdinck",
+      "url": "http://streaming.exclusive.radio/er/engelberthumperdinck/icecast.audio"
+    },
+    {
+      "name": "Enrique Iglesias",
+      "url": "http://streaming.exclusive.radio/er/enriqueiglesias/icecast.audio"
+    },
+    {
+      "name": "Erasure",
+      "url": "http://streaming.exclusive.radio/er/erasure/icecast.audio"
+    },
+    {
+      "name": "Eurythmics",
+      "url": "http://streaming.exclusive.radio/er/eurythmics/icecast.audio"
+    },
+    {
+      "name": "Frank Sinatra",
+      "url": "http://streaming.exclusive.radio/er/franksinatra/icecast.audio"
+    },
+    {
+      "name": "Freya Ridings",
+      "url": "http://streaming.exclusive.radio/er/freyaridings/icecast.audio"
+    },
+    {
+      "name": "George Michael",
+      "url": "http://streaming.exclusive.radio/er/georgemichael/icecast.audio"
+    },
+    {
+      "name": "Gloria Estefan",
+      "url": "http://streaming.exclusive.radio/er/gloriaestefan/icecast.audio"
+    },
+    {
+      "name": "Grace VanderWaal",
+      "url": "http://streaming.exclusive.radio/er/gracevanderwaal/icecast.audio"
+    },
+    {
+      "name": "Hall &  Oates",
+      "url": "http://streaming.exclusive.radio/er/hallandoates/icecast.audio"
+    },
+    {
+      "name": "Harry Styles",
+      "url": "http://streaming.exclusive.radio/er/harrystyles/icecast.audio"
+    },
+    {
+      "name": "Huey Lewis &  The News",
+      "url": "http://streaming.exclusive.radio/er/hueylewis/icecast.audio"
+    },
+    {
+      "name": "Imagine Dragons",
+      "url": "http://streaming.exclusive.radio/er/imaginedragons/icecast.audio"
+    },
+    {
+      "name": "J-Pop",
+      "url": "http://streaming.exclusive.radio/er/jpop/icecast.audio"
+    },
+    {
+      "name": "James Blunt",
+      "url": "http://streaming.exclusive.radio/er/jamesblunt/icecast.audio"
+    },
+    {
+      "name": "Janet Jackson",
+      "url": "http://streaming.exclusive.radio/er/janetjackson/icecast.audio"
+    },
+    {
+      "name": "Jason Donovan",
+      "url": "http://streaming.exclusive.radio/er/jasondonovan/icecast.audio"
+    },
+    {
+      "name": "Jennifer Lopez",
+      "url": "http://streaming.exclusive.radio/er/jenniferlopez/icecast.audio"
+    },
+    {
+      "name": "John Legend",
+      "url": "http://streaming.exclusive.radio/er/johnlegend/icecast.audio"
+    },
+    {
+      "name": "Johnny Mathis",
+      "url": "http://streaming.exclusive.radio/er/johnnymathis/icecast.audio"
+    },
+    {
+      "name": "Josh Groban",
+      "url": "http://streaming.exclusive.radio/er/joshgroban/icecast.audio"
+    },
+    {
+      "name": "Justin Bieber",
+      "url": "http://streaming.exclusive.radio/er/justinbieber/icecast.audio"
+    },
+    {
+      "name": "Justin Timberlake",
+      "url": "http://streaming.exclusive.radio/er/justintimberlake/icecast.audio"
+    },
+    {
+      "name": "K-Pop",
+      "url": "http://streaming.exclusive.radio/er/kpop/icecast.audio"
+    },
+    {
+      "name": "Katy Perry",
+      "url": "http://streaming.exclusive.radio/er/katyperry/icecast.audio"
+    },
+    {
+      "name": "Kehlani",
+      "url": "http://streaming.exclusive.radio/er/kehlani/icecast.audio"
+    },
+    {
+      "name": "Kelly Clarkson",
+      "url": "http://streaming.exclusive.radio/er/kellyclarkson/icecast.audio"
+    },
+    {
+      "name": "Kylie Minogue",
+      "url": "http://streaming.exclusive.radio/er/kylie/icecast.audio"
+    },
+    {
+      "name": "Lady Gaga",
+      "url": "http://streaming.exclusive.radio/er/ladygaga/icecast.audio"
+    },
+    {
+      "name": "Lewis Capaldi",
+      "url": "http://streaming.exclusive.radio/er/lewiscapaldi/icecast.audio"
+    },
+    {
+      "name": "Lionel Richie",
+      "url": "http://streaming.exclusive.radio/er/lionelrichie/icecast.audio"
+    },
+    {
+      "name": "Little Mix",
+      "url": "http://streaming.exclusive.radio/er/littlemix/icecast.audio"
+    },
+    {
+      "name": "Lizzo",
+      "url": "http://streaming.exclusive.radio/er/lizzo/icecast.audio"
+    },
+    {
+      "name": "Lorde",
+      "url": "http://streaming.exclusive.radio/er/lorde/icecast.audio"
+    },
+    {
+      "name": "Mabel",
+      "url": "http://streaming.exclusive.radio/er/mabel/icecast.audio"
+    },
+    {
+      "name": "Madonna",
+      "url": "http://streaming.exclusive.radio/er/madonna/icecast.audio"
+    },
+    {
+      "name": "Mariah Carey",
+      "url": "http://streaming.exclusive.radio/er/mariahcarey/icecast.audio"
+    },
+    {
+      "name": "Maroon 5",
+      "url": "http://streaming.exclusive.radio/er/maroon5/icecast.audio"
+    },
+    {
+      "name": "Michael Bolton",
+      "url": "http://streaming.exclusive.radio/er/michaelbolton/icecast.audio"
+    },
+    {
+      "name": "Michael Buble",
+      "url": "http://streaming.exclusive.radio/er/michaelbuble/icecast.audio"
+    },
+    {
+      "name": "Michael Jackson",
+      "url": "http://streaming.exclusive.radio/er/michaeljackson/icecast.audio"
+    },
+    {
+      "name": "Mike And The Mechanics",
+      "url": "http://streaming.exclusive.radio/er/mikeandthemechanics/icecast.audio"
+    },
+    {
+      "name": "Miley Cyrus",
+      "url": "http://streaming.exclusive.radio/er/mileycyrus/icecast.audio"
+    },
+    {
+      "name": "Moby",
+      "url": "http://streaming.exclusive.radio/er/moby/icecast.audio"
+    },
+    {
+      "name": "Nat King Cole",
+      "url": "http://streaming.exclusive.radio/er/natkingcole/icecast.audio"
+    },
+    {
+      "name": "Niall Horan",
+      "url": "http://streaming.exclusive.radio/er/niallhoran/icecast.audio"
+    },
+    {
+      "name": "Olivia Newton John",
+      "url": "http://streaming.exclusive.radio/er/onj/icecast.audio"
+    },
+    {
+      "name": "One Direction",
+      "url": "http://streaming.exclusive.radio/er/onedirection/icecast.audio"
+    },
+    {
+      "name": "Paloma Faith",
+      "url": "http://streaming.exclusive.radio/er/palomafaith/icecast.audio"
+    },
+    {
+      "name": "Party",
+      "url": "http://streaming.exclusive.radio/er/party/icecast.audio"
+    },
+    {
+      "name": "Party Anthems",
+      "url": "http://streaming.exclusive.radio/er/partyanthems/icecast.audio"
+    },
+    {
+      "name": "Pink",
+      "url": "http://streaming.exclusive.radio/er/pink/icecast.audio"
+    },
+    {
+      "name": "Pop Princesses",
+      "url": "http://streaming.exclusive.radio/er/popprincesses/icecast.audio"
+    },
+    {
+      "name": "Post Malone",
+      "url": "http://streaming.exclusive.radio/er/postmalone/icecast.audio"
+    },
+    {
+      "name": "Pussycat Dolls",
+      "url": "http://streaming.exclusive.radio/er/pussycatdolls/icecast.audio"
+    },
+    {
+      "name": "Rave",
+      "url": "http://streaming.exclusive.radio/er/rave/icecast.audio"
+    },
+    {
+      "name": "Rihanna",
+      "url": "http://streaming.exclusive.radio/er/rihanna/icecast.audio"
+    },
+    {
+      "name": "Rita Ora",
+      "url": "http://streaming.exclusive.radio/er/ritaora/icecast.audio"
+    },
+    {
+      "name": "Roxette",
+      "url": "http://streaming.exclusive.radio/er/roxette/icecast.audio"
+    },
+    {
+      "name": "Roy Orbison",
+      "url": "http://streaming.exclusive.radio/er/royorbison/icecast.audio"
+    },
+    {
+      "name": "Sade",
+      "url": "http://streaming.exclusive.radio/er/sade/icecast.audio"
+    },
+    {
+      "name": "Sam Cooke",
+      "url": "http://streaming.exclusive.radio/er/samcooke/icecast.audio"
+    },
+    {
+      "name": "Sam Smith",
+      "url": "http://streaming.exclusive.radio/er/samsmith/icecast.audio"
+    },
+    {
+      "name": "Savage Garden",
+      "url": "http://streaming.exclusive.radio/er/savagegarden/icecast.audio"
+    },
+    {
+      "name": "Shakira",
+      "url": "http://streaming.exclusive.radio/er/shakira/icecast.audio"
+    },
+    {
+      "name": "Shawn Mendes",
+      "url": "http://streaming.exclusive.radio/er/shawnmendes/icecast.audio"
+    },
+    {
+      "name": "Sia",
+      "url": "http://streaming.exclusive.radio/er/sia/icecast.audio"
+    },
+    {
+      "name": "Simple Minds",
+      "url": "http://streaming.exclusive.radio/er/simpleminds/icecast.audio"
+    },
+    {
+      "name": "Spandau Ballet",
+      "url": "http://streaming.exclusive.radio/er/spandauballet/icecast.audio"
+    },
+    {
+      "name": "Suzanne Vega",
+      "url": "http://streaming.exclusive.radio/er/suzannevega/icecast.audio"
+    },
+    {
+      "name": "Take That",
+      "url": "http://streaming.exclusive.radio/er/takethat/icecast.audio"
+    },
+    {
+      "name": "Taylor Swift",
+      "url": "http://streaming.exclusive.radio/er/taylorswift/icecast.audio"
+    },
+    {
+      "name": "Tears For Fears",
+      "url": "http://streaming.exclusive.radio/er/tearsforfears/icecast.audio"
+    },
+    {
+      "name": "The 1975",
+      "url": "http://streaming.exclusive.radio/er/the1975/icecast.audio"
+    },
+    {
+      "name": "The Bee Gees",
+      "url": "http://streaming.exclusive.radio/er/beegees/icecast.audio"
+    },
+    {
+      "name": "The Carpenters",
+      "url": "http://streaming.exclusive.radio/er/carpenters/icecast.audio"
+    },
+    {
+      "name": "The Human League",
+      "url": "http://streaming.exclusive.radio/er/humanleague/icecast.audio"
+    },
+    {
+      "name": "The Weeknd",
+      "url": "http://streaming.exclusive.radio/er/theweeknd/icecast.audio"
+    },
+    {
+      "name": "Tinie Tempah",
+      "url": "http://streaming.exclusive.radio/er/tinietempah/icecast.audio"
+    },
+    {
+      "name": "Tom Jones",
+      "url": "http://streaming.exclusive.radio/er/tomjones/icecast.audio"
+    },
+    {
+      "name": "Tony Bennett",
+      "url": "http://streaming.exclusive.radio/er/tonybennett/icecast.audio"
+    },
+    {
+      "name": "Whitney Houston",
+      "url": "http://streaming.exclusive.radio/er/whitneyhouston/icecast.audio"
+    },
+    {
+      "name": "will.i.am",
+      "url": "http://streaming.exclusive.radio/er/william/icecast.audio"
+    }
+  ],
+  "Hip Hop": [
+    {
+      "name": "Beastie Boys",
+      "url": "http://streaming.exclusive.radio/er/beastieboys/icecast.audio"
+    },
+    {
+      "name": "Cardi B",
+      "url": "http://streaming.exclusive.radio/er/cardib/icecast.audio"
+    },
+    {
+      "name": "Crosby Stills Nash and Young",
+      "url": "http://streaming.exclusive.radio/er/csny/icecast.audio"
+    },
+    {
+      "name": "Dr. Dre",
+      "url": "http://streaming.exclusive.radio/er/drdre/icecast.audio"
+    },
+    {
+      "name": "Eminem",
+      "url": "http://streaming.exclusive.radio/er/eminem/icecast.audio"
+    },
+    {
+      "name": "JAY-Z",
+      "url": "http://streaming.exclusive.radio/er/jay-z/icecast.audio"
+    },
+    {
+      "name": "Johnny Nash",
+      "url": "http://streaming.exclusive.radio/er/johnnynash/icecast.audio"
+    },
+    {
+      "name": "Jonas Brothers",
+      "url": "http://streaming.exclusive.radio/er/jonasbrothers/icecast.audio"
+    },
+    {
+      "name": "Kanye West",
+      "url": "http://streaming.exclusive.radio/er/kanyewest/icecast.audio"
+    },
+    {
+      "name": "Kendrick Lamar",
+      "url": "http://streaming.exclusive.radio/er/kendricklamar/icecast.audio"
+    },
+    {
+      "name": "Nicki Minaj",
+      "url": "http://streaming.exclusive.radio/er/nickiminaj/icecast.audio"
+    },
+    {
+      "name": "Run-DMC",
+      "url": "http://streaming.exclusive.radio/er/rundmc/icecast.audio"
+    },
+    {
+      "name": "Stephane Grappelli",
+      "url": "http://streaming.exclusive.radio/er/stephanegrappelli/icecast.audio"
+    },
+    {
+      "name": "Travis Scott",
+      "url": "http://streaming.exclusive.radio/er/travisscott/icecast.audio"
+    }
+  ],
+  "Heavy Metal": [
+    {
+      "name": "Black Sabbath",
+      "url": "http://streaming.exclusive.radio/er/blacksabbath/icecast.audio"
+    },
+    {
+      "name": "Iron Maiden",
+      "url": "http://streaming.exclusive.radio/er/ironmaiden/icecast.audio"
+    }
+  ],
+  "New Wave": [
+    {
+      "name": "Blondie",
+      "url": "http://streaming.exclusive.radio/er/blondie/icecast.audio"
+    }
+  ],
+  "Jazz": [
+    {
+      "name": "Charlie Parker",
+      "url": "http://streaming.exclusive.radio/er/charlieparker/icecast.audio"
+    },
+    {
+      "name": "Count Basie",
+      "url": "http://streaming.exclusive.radio/er/countbasie/icecast.audio"
+    },
+    {
+      "name": "Dave Brubeck",
+      "url": "http://streaming.exclusive.radio/er/davebrubeck/icecast.audio"
+    },
+    {
+      "name": "Diana Krall",
+      "url": "http://streaming.exclusive.radio/er/dianakrall/icecast.audio"
+    },
+    {
+      "name": "Dizzy Gillespie",
+      "url": "http://streaming.exclusive.radio/er/dizzygillespie/icecast.audio"
+    },
+    {
+      "name": "Duke Ellington",
+      "url": "http://streaming.exclusive.radio/er/dukeellington/icecast.audio"
+    },
+    {
+      "name": "Ella Fitzgerald",
+      "url": "http://streaming.exclusive.radio/er/ellafitzgerald/icecast.audio"
+    },
+    {
+      "name": "George Benson",
+      "url": "http://streaming.exclusive.radio/er/georgebenson/icecast.audio"
+    },
+    {
+      "name": "Glenn Miller",
+      "url": "http://streaming.exclusive.radio/er/glennmiller/icecast.audio"
+    },
+    {
+      "name": "Gregory Porter",
+      "url": "http://streaming.exclusive.radio/er/gregoryporter/icecast.audio"
+    },
+    {
+      "name": "Harry Connick Jr.",
+      "url": "http://streaming.exclusive.radio/er/harryconnick/icecast.audio"
+    },
+    {
+      "name": "Herbie Hancock",
+      "url": "http://streaming.exclusive.radio/er/herbiehancock/icecast.audio"
+    },
+    {
+      "name": "Jamie Cullum",
+      "url": "http://streaming.exclusive.radio/er/jamiecullum/icecast.audio"
+    },
+    {
+      "name": "Jaques Loussier",
+      "url": "http://streaming.exclusive.radio/er/jaquesloussier/icecast.audio"
+    },
+    {
+      "name": "Louis Armstrong",
+      "url": "http://streaming.exclusive.radio/er/louisarmstrong/icecast.audio"
+    },
+    {
+      "name": "Miles Davis",
+      "url": "http://streaming.exclusive.radio/er/milesdavis/icecast.audio"
+    },
+    {
+      "name": "Norah Jones",
+      "url": "http://streaming.exclusive.radio/er/norahjones/icecast.audio"
+    },
+    {
+      "name": "Oscar Peterson",
+      "url": "http://streaming.exclusive.radio/er/oscarpeterson/icecast.audio"
+    }
+  ],
+  "Pop": [
+    {
+      "name": "Twenty One Pilots",
+      "url": "http://streaming.exclusive.radio/er/twentyonepilots/icecast.audio"
+    }
+  ]
+};
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const genrePicker = document.getElementById('genrePicker');
+      const artistPicker = document.getElementById('artistPicker');
+      const audioPlayer = document.getElementById('audioPlayer');
+      const brokenLog = document.getElementById('brokenLog');
+
+      let favourites = JSON.parse(localStorage.getItem('favourites') || "[]");
+      let brokenLinks = JSON.parse(localStorage.getItem('brokenLinks') || "[]");
+
+      const allStations = Object.values(genreData).flat();
+      genreData["1 Favourites"] = favourites
+        .map(name => allStations.find(st => st.name === name))
+        .filter(Boolean);
+
+      const genreKeys = Object.keys(genreData).sort((a, b) => a === "1 Favourites" ? -1 : a.localeCompare(b));
+      genreKeys.forEach(genre => {
+        const opt = document.createElement('option');
+        opt.value = genre;
+        opt.textContent = genre;
+        genrePicker.appendChild(opt);
+      });
+
+      updateArtistList();
+
+      function updateArtistList() {
+        const selectedGenre = genrePicker.value;
+        artistPicker.innerHTML = '';
+        genreData[selectedGenre].slice().sort((a, b) => a.name.localeCompare(b.name)).forEach(station => {
+          const opt = document.createElement('option');
+          opt.value = station.url;
+          opt.textContent = station.name + (favourites.includes(station.name) ? ' ⭐' : '');
+          artistPicker.appendChild(opt);
+        });
+      }
+
+      function searchArtists() {
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        for (let genre in genreData) {
+          const match = genreData[genre].find(st => st.name.toLowerCase().includes(term));
+          if (match) {
+            genrePicker.value = genre;
+            updateArtistList();
+            const options = Array.from(artistPicker.options);
+            const matchOption = options.find(opt => opt.textContent.toLowerCase().includes(term));
+            if (matchOption) {
+              matchOption.selected = true;
+            }
+            break;
+          }
+        }
+      }
+
+     function playStation() {
+  const url = artistPicker.value;
+  audioPlayer.src = url;
+
+  audioPlayer.play().catch(() => {
+    logBrokenLink();  // More reliable than relying on onerror
+  });
+}
+
+      function toggleFavourite() {
+        const selected = artistPicker.options[artistPicker.selectedIndex].textContent.replace(' ⭐','');
+        if (favourites.includes(selected)) {
+          favourites = favourites.filter(f => f !== selected);
+        } else {
+          favourites.push(selected);
+        }
+        localStorage.setItem('favourites', JSON.stringify(favourites));
+        genreData["1 Favourites"] = favourites.map(name =>
+          allStations.find(st => st.name === name)).filter(Boolean);
+        updateArtistList();
+      }
+
+      function pickRandom() {
+        const selectedGenre = genrePicker.value;
+        const list = genreData[selectedGenre];
+        if (!list || list.length === 0) return;
+        const randomStation = list[Math.floor(Math.random() * list.length)];
+        updateArtistList();
+        const options = Array.from(artistPicker.options);
+        const matchOption = options.find(opt => opt.textContent.includes(randomStation.name));
+        if (matchOption) {
+          matchOption.selected = true;
+          playStation();
+        }
+      }
+
+      function logBrokenLink() {
+        const artist = artistPicker.options[artistPicker.selectedIndex].textContent;
+        const url = artistPicker.value;
+        const entry = `${artist}: ${url}`;
+        if (!brokenLinks.includes(entry)) {
+          brokenLinks.push(entry);
+          localStorage.setItem('brokenLinks', JSON.stringify(brokenLinks));
+          brokenLog.value = brokenLinks.join('\n');
+        }
+      }
+
+      function copyBrokenLog() {
+        navigator.clipboard.writeText(brokenLog.value);
+        alert("Copied to clipboard");
+      }
+
+      brokenLog.value = brokenLinks.join('\n');
+
+      window.searchArtists = searchArtists;
+      window.playStation = playStation;
+      window.toggleFavourite = toggleFavourite;
+      window.copyBrokenLog = copyBrokenLog;
+      window.updateArtistList = updateArtistList;
+      window.pickRandom = pickRandom;
+    });
+  </script>
+</body>
+</html>
